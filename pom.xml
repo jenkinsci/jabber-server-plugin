@@ -8,7 +8,7 @@
 
 	<groupId>de.e-nexus</groupId>
 	<artifactId>jabber-server-plugin</artifactId>
-	<version>1.1-SNAPSHOT</version>
+	<version>1.1</version>
 	<packaging>hpi</packaging>
 	<name>Jabber Server plugin</name>
 	<url>https://github.com/jenkinsci/jabber-server-plugin/wiki</url>
@@ -22,7 +22,7 @@
 	</developers>
 
 	<scm>
-		<connection>scm:git:git://github.com/jenkinsci/jabber-server-plugin.git</connection>
+		<connection>scm:git:https://github.com/jenkinsci/jabber-server-plugin.git</connection>
 		<developerConnection>scm:git:git@github.com/jenkinsci/jabber-server-plugin.git</developerConnection>
 		<url>http://github.com/jenkinsci/jabber-server-plugin</url>
 	</scm>
