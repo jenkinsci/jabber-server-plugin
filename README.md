@@ -3,7 +3,7 @@ jabber-server-plugin
 
 This document informs about ways to get **informations** do you need or wish to have.
 
-NOTE: The Plugin requires the [Jenkin's own user database](https://wiki.jenkins-ci.org/display/JENKINS/Standard+Security+Setup) to be activated.
+**NOTE**: The Plugin requires the [Jenkin's own user database](https://wiki.jenkins-ci.org/display/JENKINS/Standard+Security+Setup) to be activated.
 
 Handbook: 
 
