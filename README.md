@@ -6,7 +6,7 @@ This document informs about ways to get **informations** do you need or wish to 
 Handbook: 
 
  * [Installation Handbook](https://github.com/jenkinsci/jabber-server-plugin/wiki/Installation-Handbook)
- * Integration Handbook
+ * [Integration Handbook](https://github.com/jenkinsci/jabber-server-plugin/wiki/Integration-Handbook)
 
 #Short description
 
