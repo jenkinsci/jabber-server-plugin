@@ -1,0 +1,13 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+	<f:section title="Jabber Server">
+		<f:entry title="Configuration">
+			<div style="display:table; padding-bottom:30px;">
+				<label style="display:table-row"><span style="display:table-cell;text-align:right;">Absolute filename of the SSL-Certificate (.jks-file):</span><input style="display:table-cell;" name="absoluteCertificateFilename" placeholder="Relative .jks-File" value="${descriptor.absoluteCertificateFilename}"/></label>
+				<label style="display:table-row"><span style="display:table-cell;text-align:right;">SSL-Certificate's Password:</span><input style="display:table-cell;" autocomplete="off" type="password" name="certificateKeyphrase" placeholder="Secret for the .jks-File" value="${descriptor.certificateKeyphrase}" /></label>
+				<label style="display:table-row"><span style="display:table-cell;text-align:right;">Server Domain:</span><input pattern="[a-Z]+.*" style="display:table-cell;" name="serverName" placeholder="This Server" value="${descriptor.serverName}"/></label>
+				<label style="display:table-row"><span style="display:table-cell;text-align:right;">Server Port:</span><input type="number" pattern="[0-9]+" min="10" max="65535" style="display:table-cell;" name="serverPort" placeholder="Usually 5222" value="${descriptor.serverPort}" /></label>
+				
+			</div>
+		</f:entry>
+	</f:section>
+</j:jelly>

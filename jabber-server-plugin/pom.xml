@@ -1,0 +1,66 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.jenkins-ci.plugins</groupId>
+		<artifactId>plugin</artifactId>
+		<version>1.509.4</version>
+	</parent>
+
+	<groupId>de.e-nexus</groupId>
+	<artifactId>jabber-server-plugin</artifactId>
+	<version>1.0</version>
+	<packaging>hpi</packaging>
+	<url>http://wiki.jenkins-ci.org/display/JENKINS/plugin-jabber-server</url>
+
+	<developers>
+		<developer>
+			<id>developer-1</id>
+			<name>Peter Rader</name>
+			<email>jenkins-plugin-jabber-server@e-nexus.de</email>
+		</developer>
+	</developers>
+
+	<scm>
+		<connection>scm:svn:https://svn.java.net/svn/jabber-server-plugin~jenkins-jabber-server</connection>
+		<developerConnection>scm:svn:https://svn.jenkins-ci.org/tags/jabber-server-plugin-1.0</developerConnection>
+		<url>https://svn.jenkins-ci.org/tags/jabber-server-plugin-1.0</url>
+	</scm>
+
+	<repositories>
+		<repository>
+			<id>repo.jenkins-ci.org</id>
+			<url>http://repo.jenkins-ci.org/public/</url>
+		</repository>
+	</repositories>
+
+	<pluginRepositories>
+		<pluginRepository>
+			<id>repo.jenkins-ci.org</id>
+			<url>http://repo.jenkins-ci.org/public/</url>
+		</pluginRepository>
+	</pluginRepositories>
+
+
+	<dependencies>
+		<dependency>
+			<groupId>org.apache.vysper</groupId>
+			<artifactId>vysper-core</artifactId>
+			<version>0.7</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jvnet.hudson.plugins</groupId>
+			<artifactId>pwauth</artifactId>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-release-plugin</artifactId>
+				<configuration>
+					<goals>deploy</goals>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>
