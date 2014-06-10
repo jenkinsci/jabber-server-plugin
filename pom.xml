@@ -8,7 +8,7 @@
 
 	<groupId>de.e-nexus</groupId>
 	<artifactId>jabber-server-plugin</artifactId>
-	<version>1.2</version>
+	<version>1.3-SNAPSHOT</version>
 	<packaging>hpi</packaging>
 	<name>Jabber Server plugin</name>
 	<url>https://wiki.jenkins-ci.org/display/JENKINS/Jabber+Server+Plugin</url>
