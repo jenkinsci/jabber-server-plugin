@@ -17,6 +17,8 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
@@ -66,6 +68,12 @@ public final class JabberBuilder extends Builder {
 	private final String name;
 
 	/**
+	 * The Logger.
+	 */
+	private static final Logger LOG = Logger.getLogger(JabberBuilder.class
+			.getSimpleName());
+
+	/**
 	 * The Constructor. Shall be used once.
 	 * 
 	 * @param builderName
@@ -89,7 +97,6 @@ public final class JabberBuilder extends Builder {
 	public boolean perform(final AbstractBuild<?, ?> build,
 			final Launcher launcher, final BuildListener listener)
 			throws InterruptedException, IOException {
-
 		try {
 			String m = "Building: " + build.getFullDisplayName();
 			String desc = build.getProject().getDescription();
@@ -235,6 +242,7 @@ public final class JabberBuilder extends Builder {
 		public synchronized void start(final String certAbsoluteFilename,
 				final String certKey, final String hostname,
 				final String serverPort) throws Exception {
+			LOG.log(Level.INFO, "Start save Jabber settings.");
 			try {
 				startJabber(certAbsoluteFilename, certKey, hostname, serverPort);
 			} catch (Exception e) {
@@ -252,51 +260,88 @@ public final class JabberBuilder extends Builder {
 		private void startJabber(final String certAbsoluteFilename,
 				final String certKey, final String hostname,
 				final String serverPort) throws Exception {
+			LOG.log(Level.INFO, "Start new identity storage.");
 			providerRegistry = new OpenStorageProviderRegistry();
+			LOG.log(Level.INFO, "Start new user authorization.");
 			simpleUserAuthorization = new SimpleUserAuthorization();
 			if (users == Collections.EMPTY_MAP) {
+				LOG.log(Level.INFO,
+						"Old users collection not yet set, create new.");
 				users = new HashMap<String, EntityImpl>();
 			} else {
+				LOG.log(Level.INFO,
+						"Old users collection has already been set, clear it now.");
 				users.clear();
 			}
 
 			// add users
+			LOG.log(Level.INFO, "Get userlist from jenkins-ci.");
 			People people = Jenkins.getInstance().getPeople();
+			LOG.log(Level.INFO, "Will loop " + people.users.size()
+					+ " jenkins-ci's user.");
 			for (UserInfo userInfo : people.users) {
+				LOG.log(Level.INFO, "Create unique name for user " + userInfo);
 				String name = generateName(userInfo);
+				LOG.log(Level.INFO, "Unique name is: '" + name
+						+ "', create new jabber-user ...");
 				EntityImpl entity = new EntityImpl(name, hostname, null);
+				LOG.log(Level.INFO, "Jabber-user has been created:'" + entity
+						+ "', add it to the users collection.");
 				users.put(name, entity);
+				LOG.log(Level.INFO, "Add it to the user authorization.");
 				simpleUserAuthorization.addUser(entity, name);
 			}
-
+			LOG.log(Level.INFO,
+					"Loop done, add the user authroization to the jabber-registry.");
 			providerRegistry.add(simpleUserAuthorization);
+			LOG.log(Level.INFO, "Register the memory-roster.");
 			MemoryRosterManager memoryRosterManager = new MemoryRosterManager();
 			providerRegistry.add(memoryRosterManager);
+			LOG.log(Level.INFO, "Create the Jabber-Server using hostname: '"
+					+ hostname + "'.");
 			server = new XMPPServer(hostname);
-
+			LOG.log(Level.INFO, "Create a TCP-Endpoint.");
 			endpoint = new TCPEndpoint();
+			LOG.log(Level.INFO, "Set the endpoint's port to " + serverPort
+					+ ".");
 			endpoint.setPort(Integer.parseInt(serverPort));
-
+			LOG.log(Level.INFO, "Add the endpoint to the Server.");
 			server.addEndpoint(endpoint);
-			server.setTLSCertificateInfo(new FileInputStream(
-					certAbsoluteFilename), certKey);
+			LOG.log(Level.INFO, "Create a stream to the certificate-file.");
+			FileInputStream fileInputStream = new FileInputStream(
+					certAbsoluteFilename);
+			LOG.log(Level.INFO,
+					"Register the certificate-stream to the Jabber-Server.");
+			server.setTLSCertificateInfo(fileInputStream, certKey);
+
+			LOG.log(Level.INFO, "Register the StopOnShutdown-Hook.");
 			Runtime.getRuntime().addShutdownHook(
 					new StopOnShutdown(this, "Stop Jabber/XMPP on Shutdown")
 							.setBuilder(this));
+			LOG.log(Level.INFO, "Handshake all users ...");
 			for (EntityImpl left : users.values()) {
+				LOG.log(Level.INFO, "Take hand of " + left);
 				for (EntityImpl right : users.values()) {
 					if (left != right) {
+						LOG.log(Level.INFO, "Take hand of " + right);
 
 						RosterItem d = new RosterItem(right,
 								SubscriptionType.BOTH);
+						LOG.log(Level.INFO, "Handshake!");
 						memoryRosterManager.addContact(left, d);
 					}
 				}
 			}
+			LOG.log(Level.INFO, "Register the storage provider.");
 			server.setStorageProviderRegistry(providerRegistry);
+			LOG.log(Level.INFO, "Start the Jabber-Server.");
 			server.start();
+			LOG.log(Level.INFO, "Add module for VCart-Fake.");
 			server.addModule(new JabberVCardModule(users));
+			LOG.log(Level.INFO, "Add module for Software-Version.");
 			server.addModule(new SoftwareVersionModule());
+			LOG.log(Level.INFO, "Initialization done, ready for connect!");
+
 		}
 
 		/**
@@ -307,7 +352,7 @@ public final class JabberBuilder extends Builder {
 		 * @return The Name.
 		 */
 		private String generateName(final UserInfo userInfo) {
-			String id = userInfo.getUser().getId();
+			String id = userInfo.getUser().getId().toLowerCase();
 			if (id.indexOf("@") > 2) {
 				id = id.substring(0, id.indexOf("@"));
 			}
