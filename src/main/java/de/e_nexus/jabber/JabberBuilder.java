@@ -7,6 +7,7 @@ import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Cause;
 import hudson.model.Descriptor;
+import hudson.model.Descriptor.FormException;
 import hudson.model.View.UserInfo;
 import hudson.model.View.People;
 import hudson.tasks.BuildStepDescriptor;
@@ -14,7 +15,18 @@ import hudson.tasks.Builder;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -242,7 +254,7 @@ public final class JabberBuilder extends Builder {
 		public synchronized void start(final String certAbsoluteFilename,
 				final String certKey, final String hostname,
 				final String serverPort) throws Exception {
-			LOG.log(Level.INFO, "Start save Jabber settings.");
+			LOG.log(Level.FINER, "Start save Jabber settings.");
 			try {
 				startJabber(certAbsoluteFilename, certKey, hostname, serverPort);
 			} catch (Exception e) {
@@ -260,88 +272,168 @@ public final class JabberBuilder extends Builder {
 		private void startJabber(final String certAbsoluteFilename,
 				final String certKey, final String hostname,
 				final String serverPort) throws Exception {
-			LOG.log(Level.INFO, "Start new identity storage.");
+			LOG.log(Level.FINER, "Create a stream to the certificate-file.");
+			FileInputStream fileInputStream = new FileInputStream(
+					certAbsoluteFilename);
+			LOG.log(Level.FINER, "Start new identity storage.");
 			providerRegistry = new OpenStorageProviderRegistry();
-			LOG.log(Level.INFO, "Start new user authorization.");
+			LOG.log(Level.FINER, "Start new user authorization.");
 			simpleUserAuthorization = new SimpleUserAuthorization();
 			if (users == Collections.EMPTY_MAP) {
-				LOG.log(Level.INFO,
+				LOG.log(Level.FINER,
 						"Old users collection not yet set, create new.");
 				users = new HashMap<String, EntityImpl>();
 			} else {
-				LOG.log(Level.INFO,
+				LOG.log(Level.FINE,
 						"Old users collection has already been set, clear it now.");
 				users.clear();
 			}
 
 			// add users
-			LOG.log(Level.INFO, "Get userlist from jenkins-ci.");
+			LOG.log(Level.FINE, "Get userlist from jenkins-ci.");
 			People people = Jenkins.getInstance().getPeople();
-			LOG.log(Level.INFO, "Will loop " + people.users.size()
+			LOG.log(Level.FINER, "Will loop " + people.users.size()
 					+ " jenkins-ci's user.");
 			for (UserInfo userInfo : people.users) {
-				LOG.log(Level.INFO, "Create unique name for user " + userInfo);
+				LOG.log(Level.FINER, "Create unique name for user " + userInfo);
 				String name = generateName(userInfo);
-				LOG.log(Level.INFO, "Unique name is: '" + name
+				LOG.log(Level.FINER, "Unique name is: '" + name
 						+ "', create new jabber-user ...");
 				EntityImpl entity = new EntityImpl(name, hostname, null);
-				LOG.log(Level.INFO, "Jabber-user has been created:'" + entity
+				LOG.log(Level.FINER, "Jabber-user has been created:'" + entity
 						+ "', add it to the users collection.");
 				users.put(name, entity);
-				LOG.log(Level.INFO, "Add it to the user authorization.");
+				LOG.log(Level.FINER, "Add it to the user authorization.");
 				simpleUserAuthorization.addUser(entity, name);
 			}
-			LOG.log(Level.INFO,
+			LOG.log(Level.FINER,
 					"Loop done, add the user authroization to the jabber-registry.");
 			providerRegistry.add(simpleUserAuthorization);
-			LOG.log(Level.INFO, "Register the memory-roster.");
+			LOG.log(Level.FINER, "Register the memory-roster.");
 			MemoryRosterManager memoryRosterManager = new MemoryRosterManager();
 			providerRegistry.add(memoryRosterManager);
-			LOG.log(Level.INFO, "Create the Jabber-Server using hostname: '"
+			LOG.log(Level.FINE, "Create the Jabber-Server using hostname: '"
 					+ hostname + "'.");
 			server = new XMPPServer(hostname);
-			LOG.log(Level.INFO, "Create a TCP-Endpoint.");
+			LOG.log(Level.FINER, "Create a TCP-Endpoint.");
 			endpoint = new TCPEndpoint();
-			LOG.log(Level.INFO, "Set the endpoint's port to " + serverPort
+			LOG.log(Level.FINER, "Set the endpoint's port to " + serverPort
 					+ ".");
 			endpoint.setPort(Integer.parseInt(serverPort));
-			LOG.log(Level.INFO, "Add the endpoint to the Server.");
+			LOG.log(Level.FINER, "Add the endpoint to the Server.");
 			server.addEndpoint(endpoint);
-			LOG.log(Level.INFO, "Create a stream to the certificate-file.");
-			FileInputStream fileInputStream = new FileInputStream(
-					certAbsoluteFilename);
-			LOG.log(Level.INFO,
-					"Register the certificate-stream to the Jabber-Server.");
-			server.setTLSCertificateInfo(fileInputStream, certKey);
 
-			LOG.log(Level.INFO, "Register the StopOnShutdown-Hook.");
+			LOG.log(Level.FINER,
+					"Register the certificate-stream to the Jabber-Server.");
+
+			server.setTLSCertificateInfo(fileInputStream, certKey);
+			LOG.log(Level.FINER, "Register the StopOnShutdown-Hook.");
 			Runtime.getRuntime().addShutdownHook(
 					new StopOnShutdown(this, "Stop Jabber/XMPP on Shutdown")
 							.setBuilder(this));
-			LOG.log(Level.INFO, "Handshake all users ...");
+			LOG.log(Level.FINE, "Handshake all users ...");
 			for (EntityImpl left : users.values()) {
-				LOG.log(Level.INFO, "Take hand of " + left);
+				LOG.log(Level.FINER, "Take hand of " + left);
 				for (EntityImpl right : users.values()) {
 					if (left != right) {
-						LOG.log(Level.INFO, "Take hand of " + right);
+						LOG.log(Level.FINER, "Take hand of " + right);
 
 						RosterItem d = new RosterItem(right,
 								SubscriptionType.BOTH);
-						LOG.log(Level.INFO, "Handshake!");
+						LOG.log(Level.FINER, "Handshake!");
 						memoryRosterManager.addContact(left, d);
 					}
 				}
 			}
-			LOG.log(Level.INFO, "Register the storage provider.");
+			LOG.log(Level.FINER, "Register the storage provider.");
 			server.setStorageProviderRegistry(providerRegistry);
-			LOG.log(Level.INFO, "Start the Jabber-Server.");
+			LOG.log(Level.FINER, "Start the Jabber-Server.");
 			server.start();
-			LOG.log(Level.INFO, "Add module for VCart-Fake.");
+			LOG.log(Level.FINER, "Add module for VCart-Fake.");
 			server.addModule(new JabberVCardModule(users));
-			LOG.log(Level.INFO, "Add module for Software-Version.");
+			LOG.log(Level.FINER, "Add module for Software-Version.");
 			server.addModule(new SoftwareVersionModule());
-			LOG.log(Level.INFO, "Initialization done, ready for connect!");
+			LOG.log(Level.FINE, "Initialization done, ready for connect!");
 
+		}
+
+		/**
+		 * Checks the certificate for validity.
+		 * 
+		 * @param certKey
+		 *            The key of the Certificate
+		 * @param hostname
+		 *            The hostname/alias this certificate is for.
+		 * @param fileInputStream
+		 *            The Stream of the Certificate.
+		 * @throws KeyStoreException
+		 *             This shall never been thrown. Bug in JKS i think.
+		 * @throws IOException
+		 *             If the file can not be read.
+		 * @throws NoSuchAlgorithmException
+		 *             If the format of the .jks is wrong.
+		 * @throws CertificateException
+		 *             If the Certificate can not be loaded.
+		 * @throws FormException
+		 *             Internal certificate mismatch, wrong password or
+		 *             out-dated.
+		 */
+		private void checkCertificate(final String certKey,
+				final String hostname, final FileInputStream fileInputStream)
+				throws KeyStoreException, IOException,
+				NoSuchAlgorithmException, CertificateException, FormException {
+			LOG.log(Level.FINER, "Initiate the keystore-instance.");
+			KeyStore s = KeyStore.getInstance(KeyStore.getDefaultType());
+			LOG.log(Level.FINE,
+					"Load the certificate using the certificate-password.");
+			try {
+				s.load(fileInputStream, certKey.toCharArray());
+			} catch (IOException e) {
+				if (e.getCause() instanceof UnrecoverableKeyException) {
+					throw new FormException("Password is wrong.",
+							"absoluteCertificateFilename");
+				}
+				throw e;
+			}
+			LOG.log(Level.FINE, "Get the certificate by the alias(" + hostname
+					+ ").");
+
+			Certificate certificate = s.getCertificate(hostname);
+			X509Certificate cert = (X509Certificate) certificate;
+			if (certificate instanceof X509Certificate) {
+				LOG.log(Level.FINER, "Certificate is an X509Certificate.");
+				DateFormat dateFormat = SimpleDateFormat
+						.getDateInstance(DateFormat.MEDIUM);
+				Date now = new Date(System.currentTimeMillis());
+				if (cert.getNotAfter().before(now)) {
+					throw new FormException(
+							"Certificate out-of-date! Valid from "
+									+ dateFormat.format(cert.getNotBefore())
+									+ "-"
+									+ dateFormat.format(cert.getNotAfter())
+									+ "!", "absoluteCertificateFilename");
+				}
+				if (cert.getNotBefore().after(now)) {
+					throw new FormException(
+							"Certificate premature! Valid from "
+									+ dateFormat.format(cert.getNotBefore())
+									+ "-"
+									+ dateFormat.format(cert.getNotAfter())
+									+ "!", "absoluteCertificateFilename");
+				}
+			} else {
+				if (certificate == null) {
+					throw new FormException(
+							"Alias is not found in the .jks or it is not a certificate!",
+							"absoluteCertificateFilename");
+				} else {
+					PublicKey pk = certificate.getPublicKey();
+					throw new FormException(
+							"Key not supported: X509Certificate expected but .jks contains "
+									+ certificate + "!",
+							"absoluteCertificateFilename");
+				}
+			}
 		}
 
 		/**
@@ -476,12 +568,17 @@ public final class JabberBuilder extends Builder {
 			save();
 			JabberServer server;
 			try {
+				configureFromForm(formData);
 				server = JabberServer.getServer();
+				FileInputStream fileInputStream = new FileInputStream(
+						absoluteCertificateFilename);
+				server.checkCertificate(certificateKeyphrase, serverName,
+						fileInputStream);
 
 				if (server.isRunning()) {
 					server.stop();
 				}
-				configureFromForm(formData);
+
 				server.start(absoluteCertificateFilename, certificateKeyphrase,
 						serverName, serverPort);
 			} catch (Exception e) {
