@@ -143,6 +143,14 @@ public final class JabberBuilder extends Builder {
 	 * The XMPP-Server instance.
 	 */
 	public static final class JabberServer {
+		/**
+		 * The constructor registeres the shutdown-hook for clean exit.
+		 */
+		public JabberServer() {
+			LOG.log(Level.FINER, "Register the StopOnShutdown-Hook.");
+			Runtime.getRuntime().addShutdownHook(
+					new StopOnShutdown(this, "Stop Jabber/XMPP on Shutdown"));
+		}
 
 		/**
 		 * Lazy Singleton.
@@ -272,6 +280,7 @@ public final class JabberBuilder extends Builder {
 		private void startJabber(final String certAbsoluteFilename,
 				final String certKey, final String hostname,
 				final String serverPort) throws Exception {
+
 			LOG.log(Level.FINER, "Create a stream to the certificate-file.");
 			FileInputStream fileInputStream = new FileInputStream(
 					certAbsoluteFilename);
@@ -288,7 +297,6 @@ public final class JabberBuilder extends Builder {
 						"Old users collection has already been set, clear it now.");
 				users.clear();
 			}
-
 			// add users
 			LOG.log(Level.FINE, "Get userlist from jenkins-ci.");
 			People people = Jenkins.getInstance().getPeople();
@@ -327,10 +335,6 @@ public final class JabberBuilder extends Builder {
 					"Register the certificate-stream to the Jabber-Server.");
 
 			server.setTLSCertificateInfo(fileInputStream, certKey);
-			LOG.log(Level.FINER, "Register the StopOnShutdown-Hook.");
-			Runtime.getRuntime().addShutdownHook(
-					new StopOnShutdown(this, "Stop Jabber/XMPP on Shutdown")
-							.setBuilder(this));
 			LOG.log(Level.FINE, "Handshake all users ...");
 			for (EntityImpl left : users.values()) {
 				LOG.log(Level.FINER, "Take hand of " + left);
@@ -530,23 +534,6 @@ public final class JabberBuilder extends Builder {
 		 */
 		public DescriptorImpl() {
 			load();
-
-			if (absoluteCertificateFilename != null
-					&& certificateKeyphrase != null && serverName != null
-					&& serverPort != null) {
-				try {
-					JabberServer server = JabberServer.getServer();
-
-					if (server.isRunning()) {
-						server.stop();
-					}
-
-					server.start(absoluteCertificateFilename,
-							certificateKeyphrase, serverName, serverPort);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
 		}
 
 		@Override
