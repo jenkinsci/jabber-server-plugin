@@ -45,6 +45,7 @@
 
 	<dependencies>
 		<dependency>
+		<!-- git clone http://git-wip-us.apache.org/repos/asf/mina-vysper.git vysper -->
 			<groupId>org.apache.vysper</groupId>
 			<artifactId>vysper-core</artifactId>
 			<version>0.7</version>

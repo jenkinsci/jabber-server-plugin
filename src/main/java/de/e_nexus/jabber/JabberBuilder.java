@@ -1,18 +1,5 @@
 package de.e_nexus.jabber;
 
-import hudson.Extension;
-import hudson.Launcher;
-import hudson.model.BuildListener;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.Cause;
-import hudson.model.Descriptor;
-import hudson.model.Descriptor.FormException;
-import hudson.model.View.UserInfo;
-import hudson.model.View.People;
-import hudson.tasks.BuildStepDescriptor;
-import hudson.tasks.Builder;
-
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.KeyStore;
@@ -31,9 +18,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import jenkins.model.Jenkins;
-import net.sf.json.JSONObject;
 
 import org.apache.vysper.mina.TCPEndpoint;
 import org.apache.vysper.storage.OpenStorageProviderRegistry;
@@ -56,12 +40,26 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
 import de.e_nexus.jabber.handler.vcard.JabberVCardModule;
+import hudson.Extension;
+import hudson.Launcher;
+import hudson.model.AbstractBuild;
+import hudson.model.AbstractProject;
+import hudson.model.BuildListener;
+import hudson.model.Cause;
+import hudson.model.Descriptor;
+import hudson.model.Descriptor.FormException;
+import hudson.model.View.People;
+import hudson.model.View.UserInfo;
+import hudson.tasks.BuildStepDescriptor;
+import hudson.tasks.Builder;
+import jenkins.model.Jenkins;
+import net.sf.json.JSONObject;
 
 /**
  * The Builder itself, used to start/stop the Server, create the user's and
  * connect them together. This class itself is thread-save, the inner static
- * Class {@link #JabberBuilder.JabberServer} is not thread-save. Therefore you shall only
- * have one instance of the {@link Builder}.
+ * Class {@link #JabberBuilder.JabberServer} is not thread-save. Therefore you
+ * shall only have one instance of the {@link Builder}.
  * 
  * <p>
  * Even if the class and package named jabber, internally we use the more
@@ -82,8 +80,8 @@ public final class JabberBuilder extends Builder {
 	/**
 	 * The Logger.
 	 */
-	private static final Logger LOG = Logger.getLogger(JabberBuilder.class
-			.getSimpleName());
+	private static final Logger LOG = Logger
+			.getLogger(JabberBuilder.class.getSimpleName());
 
 	/**
 	 * The Constructor. Shall be used once.
@@ -108,7 +106,7 @@ public final class JabberBuilder extends Builder {
 	@Override
 	public boolean perform(final AbstractBuild<?, ?> build,
 			final Launcher launcher, final BuildListener listener)
-			throws InterruptedException, IOException {
+					throws InterruptedException, IOException {
 		try {
 			String m = "Building: " + build.getFullDisplayName();
 			String desc = build.getProject().getDescription();
@@ -178,19 +176,21 @@ public final class JabberBuilder extends Builder {
 		 * method signatures.
 		 * 
 		 * @param message
-		 *            The message to broadcast, not null and <a
-		 *            href="http://www.rfc-editor.org/rfc/rfc6120.txt">\n\r as
-		 *            line-break</a>.
+		 *            The message to broadcast, not null and
+		 *            <a href="http://www.rfc-editor.org/rfc/rfc6120.txt">\n\r
+		 *            as line-break</a>.
 		 * @throws NullPointerException
 		 *             If the Server stops meanwhile or some other
 		 *             undocumentated cases.
 		 */
-		public void broadcast(final String message) throws NullPointerException {
+		public void broadcast(final String message)
+				throws NullPointerException {
 			assert users != Collections.EMPTY_LIST;
 			if (server == null) {
 				throw new IllegalStateException(
 						"Server has not yet been started.",
-						new NullPointerException("The field 'server' is null."));
+						new NullPointerException(
+								"The field 'server' is null."));
 			}
 			ServerRuntimeContext serverRuntimeContext = server
 					.getServerRuntimeContext();
@@ -210,9 +210,8 @@ public final class JabberBuilder extends Builder {
 						SessionState state = sessionContext.getState();
 						SessionStateHolder ssh = new SessionStateHolder();
 						ssh.setState(state);
-						serverRuntimeContext.getStanzaProcessor()
-								.processStanza(serverRuntimeContext,
-										sessionContext, s, ssh);
+						serverRuntimeContext.getStanzaProcessor().processStanza(
+								serverRuntimeContext, sessionContext, s, ssh);
 
 					}
 				}
@@ -230,7 +229,7 @@ public final class JabberBuilder extends Builder {
 		/**
 		 * The authorization.
 		 */
-		private SimpleUserAuthorization simpleUserAuthorization;
+		private JenkinsJabberUserAuthorization jenkinsAuthroizationForJabber;
 		/**
 		 * The server.
 		 */
@@ -264,12 +263,13 @@ public final class JabberBuilder extends Builder {
 				final String serverPort) throws Exception {
 			LOG.log(Level.FINER, "Start save Jabber settings.");
 			try {
-				startJabber(certAbsoluteFilename, certKey, hostname, serverPort);
+				startJabber(certAbsoluteFilename, certKey, hostname,
+						serverPort);
 			} catch (Exception e) {
 				server = null;
 				endpoint = null;
 				providerRegistry = null;
-				simpleUserAuthorization = null;
+				jenkinsAuthroizationForJabber = null;
 				throw e;
 			}
 		}
@@ -287,36 +287,40 @@ public final class JabberBuilder extends Builder {
 			LOG.log(Level.FINER, "Start new identity storage.");
 			providerRegistry = new OpenStorageProviderRegistry();
 			LOG.log(Level.FINER, "Start new user authorization.");
-			simpleUserAuthorization = new SimpleUserAuthorization();
+			jenkinsAuthroizationForJabber = new JenkinsJabberUserAuthorization();
 			if (users == Collections.EMPTY_MAP) {
 				LOG.log(Level.FINER,
 						"Old users collection not yet set, create new.");
 				users = new HashMap<String, EntityImpl>();
 			} else {
-				LOG.log(Level.FINE,
-						"Old users collection has already been set, clear it now.");
+				LOG.log(Level.FINE, "Old users collection has already"
+						+ " been set, clear it now.");
 				users.clear();
 			}
 			// add users
 			LOG.log(Level.FINE, "Get userlist from jenkins-ci.");
 			People people = Jenkins.getInstance().getPeople();
-			LOG.log(Level.FINER, "Will loop " + people.users.size()
-					+ " jenkins-ci's user.");
+			LOG.log(Level.FINER,
+					"Will loop " + people.users.size() + " jenkins-ci's user.");
 			for (UserInfo userInfo : people.users) {
 				LOG.log(Level.FINER, "Create unique name for user " + userInfo);
-				String name = generateName(userInfo);
-				LOG.log(Level.FINER, "Unique name is: '" + name
-						+ "', create new jabber-user ...");
-				EntityImpl entity = new EntityImpl(name, hostname, null);
-				LOG.log(Level.FINER, "Jabber-user has been created:'" + entity
-						+ "', add it to the users collection.");
-				users.put(name, entity);
+
+				JenkinsJabberEntityImpl jabberJenkinsUser = new JenkinsJabberEntityImpl(
+						users.keySet(), hostname, userInfo);
+				LOG.log(Level.FINER,
+						"Unique name is: '" + jabberJenkinsUser.getUsername()
+								+ "', create new jabber-user ...");
+				LOG.log(Level.FINER,
+						"Jabber-user has been created:'" + jabberJenkinsUser
+								+ "', add it to the users collection.");
+				users.put(jabberJenkinsUser.getUsername(), jabberJenkinsUser);
 				LOG.log(Level.FINER, "Add it to the user authorization.");
-				simpleUserAuthorization.addUser(entity, name);
+				jenkinsAuthroizationForJabber.addUser(jabberJenkinsUser,
+						jabberJenkinsUser.getUsername());
 			}
-			LOG.log(Level.FINER,
-					"Loop done, add the user authroization to the jabber-registry.");
-			providerRegistry.add(simpleUserAuthorization);
+			LOG.log(Level.FINER, "Loop done, add the user "
+					+ "authroization to the jabber-registry.");
+			providerRegistry.add(jenkinsAuthroizationForJabber);
 			LOG.log(Level.FINER, "Register the memory-roster.");
 			MemoryRosterManager memoryRosterManager = new MemoryRosterManager();
 			providerRegistry.add(memoryRosterManager);
@@ -325,15 +329,13 @@ public final class JabberBuilder extends Builder {
 			server = new XMPPServer(hostname);
 			LOG.log(Level.FINER, "Create a TCP-Endpoint.");
 			endpoint = new TCPEndpoint();
-			LOG.log(Level.FINER, "Set the endpoint's port to " + serverPort
-					+ ".");
+			LOG.log(Level.FINER,
+					"Set the endpoint's port to " + serverPort + ".");
 			endpoint.setPort(Integer.parseInt(serverPort));
 			LOG.log(Level.FINER, "Add the endpoint to the Server.");
 			server.addEndpoint(endpoint);
-
 			LOG.log(Level.FINER,
 					"Register the certificate-stream to the Jabber-Server.");
-
 			server.setTLSCertificateInfo(fileInputStream, certKey);
 			LOG.log(Level.FINE, "Handshake all users ...");
 			for (EntityImpl left : users.values()) {
@@ -353,6 +355,9 @@ public final class JabberBuilder extends Builder {
 			server.setStorageProviderRegistry(providerRegistry);
 			LOG.log(Level.FINER, "Start the Jabber-Server.");
 			server.start();
+			LOG.log(Level.FINER, "Add module for receive Jenkins commands.");
+			server.addModule(new JenkinsConversationModule(
+					jenkinsAuthroizationForJabber));
 			LOG.log(Level.FINER, "Add module for VCart-Fake.");
 			server.addModule(new JabberVCardModule(users));
 			LOG.log(Level.FINER, "Add module for Software-Version.");
@@ -384,8 +389,9 @@ public final class JabberBuilder extends Builder {
 		 */
 		private void checkCertificate(final String certKey,
 				final String hostname, final FileInputStream fileInputStream)
-				throws KeyStoreException, IOException,
-				NoSuchAlgorithmException, CertificateException, FormException {
+						throws KeyStoreException, IOException,
+						NoSuchAlgorithmException, CertificateException,
+						FormException {
 			LOG.log(Level.FINER, "Initiate the keystore-instance.");
 			KeyStore s = KeyStore.getInstance(KeyStore.getDefaultType());
 			LOG.log(Level.FINE,
@@ -399,8 +405,8 @@ public final class JabberBuilder extends Builder {
 				}
 				throw e;
 			}
-			LOG.log(Level.FINE, "Get the certificate by the alias(" + hostname
-					+ ").");
+			LOG.log(Level.FINE,
+					"Get the certificate by the alias(" + hostname + ").");
 
 			Certificate certificate = s.getCertificate(hostname);
 			X509Certificate cert = (X509Certificate) certificate;
@@ -415,15 +421,14 @@ public final class JabberBuilder extends Builder {
 									+ dateFormat.format(cert.getNotBefore())
 									+ "-"
 									+ dateFormat.format(cert.getNotAfter())
-									+ "!", "absoluteCertificateFilename");
+									+ "!",
+							"absoluteCertificateFilename");
 				}
 				if (cert.getNotBefore().after(now)) {
-					throw new FormException(
-							"Certificate premature! Valid from "
-									+ dateFormat.format(cert.getNotBefore())
-									+ "-"
-									+ dateFormat.format(cert.getNotAfter())
-									+ "!", "absoluteCertificateFilename");
+					throw new FormException("Certificate premature! Valid from "
+							+ dateFormat.format(cert.getNotBefore()) + "-"
+							+ dateFormat.format(cert.getNotAfter()) + "!",
+							"absoluteCertificateFilename");
 				}
 			} else {
 				if (certificate == null) {
@@ -438,27 +443,6 @@ public final class JabberBuilder extends Builder {
 							"absoluteCertificateFilename");
 				}
 			}
-		}
-
-		/**
-		 * Generate a jabber JID-User-Part from {@link UserInfo}.
-		 * 
-		 * @param userInfo
-		 *            The UserInfo used to create the Name.
-		 * @return The Name.
-		 */
-		private String generateName(final UserInfo userInfo) {
-			String id = userInfo.getUser().getId().toLowerCase();
-			if (id.indexOf("@") > 2) {
-				id = id.substring(0, id.indexOf("@"));
-			}
-
-			String name = id;
-			int i = 1;
-			while (users.keySet().contains(name)) {
-				name = id + i++;
-			}
-			return name;
 		}
 
 		/**
@@ -481,7 +465,7 @@ public final class JabberBuilder extends Builder {
 			server.stop();
 			server = null;
 			providerRegistry = null;
-			simpleUserAuthorization = null;
+			jenkinsAuthroizationForJabber = null;
 			providerRegistry = null;
 
 		}
@@ -501,8 +485,8 @@ public final class JabberBuilder extends Builder {
 	 * The Descriptor of the BuildStep.
 	 */
 	@Extension
-	public static final class DescriptorImpl extends
-			BuildStepDescriptor<Builder> {
+	public static final class DescriptorImpl
+			extends BuildStepDescriptor<Builder> {
 		/**
 		 * The ServerName to use as JID-Server-Part without Resource-Part.
 		 * 
@@ -511,8 +495,8 @@ public final class JabberBuilder extends Builder {
 		private String serverName;
 
 		/**
-		 * The port of the Server as String, you may specify <a
-		 * href="http://tools.ietf.org/html/rfc147">leading zeros</a>.
+		 * The port of the Server as String, you may specify
+		 * <a href="http://tools.ietf.org/html/rfc147">leading zeros</a>.
 		 */
 		private String serverPort;
 
@@ -534,6 +518,32 @@ public final class JabberBuilder extends Builder {
 		 */
 		public DescriptorImpl() {
 			load();
+			new Thread() {
+				public void run() {
+					try {
+						sleep(10000);
+					} catch (InterruptedException e1) {
+						e1.printStackTrace();
+					}
+					if (absoluteCertificateFilename != null
+							&& certificateKeyphrase != null
+							&& serverName != null && serverPort != null) {
+						try {
+							JabberServer server = JabberServer.getServer();
+
+							if (server.isRunning()) {
+								server.stop();
+							}
+
+							server.start(absoluteCertificateFilename,
+									certificateKeyphrase, serverName,
+									serverPort);
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+				};
+			}.start();
 		}
 
 		@Override
