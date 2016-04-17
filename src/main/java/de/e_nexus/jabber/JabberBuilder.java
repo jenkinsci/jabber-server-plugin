@@ -1,6 +1,7 @@
 package de.e_nexus.jabber;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -579,7 +580,10 @@ public final class JabberBuilder extends Builder {
 				server.start(absoluteCertificateFilename, certificateKeyphrase,
 						serverName, serverPort);
 			} catch (Exception e) {
-				throw new FormException(e.getMessage(), "certificateKeyphrase");
+				if(e instanceof FileNotFoundException) { 
+					throw new FormException("Certificate not found for the jabber-server! If you have no certificate deactivate the Jabber Server plugin please.", "certificateKeyphrase");
+				}
+				throw new FormException("Jabber Server plugin reported: " + e.getMessage(), "certificateKeyphrase");
 			}
 			return super.configure(req, formData);
 		}

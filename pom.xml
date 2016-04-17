@@ -5,7 +5,11 @@
 		<artifactId>plugin</artifactId>
 		<version>1.424</version>
 	</parent>
-
+<!-- 
+  Testing instructions:
+   -  test the plugin using 
+       mvn hpi:run
+ -->
 	<groupId>de.e-nexus</groupId>
 	<artifactId>jabber-server-plugin</artifactId>
 	<version>1.10-SNAPSHOT</version>
