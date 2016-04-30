@@ -51,13 +51,14 @@ public final class JenkinsJabberEntityImpl extends EntityImpl {
 	 * <p>
 	 * <b>Note: </b> The bareId may contains a password that is not used!
 	 * 
+	 * @param users
+	 *            The users currently registred in the jabber-server.
 	 * @param hostname
 	 *            The hostname.
 	 * @param userInfo
 	 *            The real Password.
 	 */
-	public JenkinsJabberEntityImpl(Set<String> users, String hostname,
-			final UserInfo userInfo) {
+	public JenkinsJabberEntityImpl(Set<String> users, String hostname, final UserInfo userInfo) {
 		super(generateUsername(users, userInfo), hostname, null);
 		this.jenkinsDetails = userInfo.getUser().getProperty(Details.class);
 	}
@@ -70,12 +71,10 @@ public final class JenkinsJabberEntityImpl extends EntityImpl {
 	 * @param userInfo
 	 * @return
 	 */
-	private static String generateUsername(Set<String> users,
-			final UserInfo userInfo) {
+	private static String generateUsername(Set<String> users, final UserInfo userInfo) {
 		String usernameUncounted = userInfo.getUser().getId().toLowerCase();
 		if (usernameUncounted.indexOf("@") > 2) {
-			usernameUncounted = usernameUncounted.substring(0,
-					usernameUncounted.indexOf("@"));
+			usernameUncounted = usernameUncounted.substring(0, usernameUncounted.indexOf("@"));
 		}
 
 		if (!users.contains(usernameUncounted)) {
@@ -102,8 +101,8 @@ public final class JenkinsJabberEntityImpl extends EntityImpl {
 	 *         if not.
 	 */
 	public boolean checkPassword(final String plaintextPassword) {
-		return HudsonPrivateSecurityRealm.PASSWORD_ENCODER.isPasswordValid(
-				jenkinsDetails.getPassword(), plaintextPassword, null);
+		return HudsonPrivateSecurityRealm.PASSWORD_ENCODER.isPasswordValid(jenkinsDetails.getPassword(),
+				plaintextPassword, null);
 	}
 
 	/**

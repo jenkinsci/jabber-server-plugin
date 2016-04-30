@@ -59,8 +59,8 @@ import net.sf.json.JSONObject;
 /**
  * The Builder itself, used to start/stop the Server, create the user's and
  * connect them together. This class itself is thread-save, the inner static
- * Class {@link #JabberBuilder.JabberServer} is not thread-save. Therefore you
- * shall only have one instance of the {@link Builder}.
+ * Class {@link JabberServer} is not thread-save. Therefore you shall only have
+ * one instance of the {@link Builder}.
  * 
  * <p>
  * Even if the class and package named jabber, internally we use the more
@@ -81,8 +81,7 @@ public final class JabberBuilder extends Builder {
 	/**
 	 * The Logger.
 	 */
-	private static final Logger LOG = Logger
-			.getLogger(JabberBuilder.class.getSimpleName());
+	private static final Logger LOG = Logger.getLogger(JabberBuilder.class.getSimpleName());
 
 	/**
 	 * The Constructor. Shall be used once.
@@ -105,9 +104,8 @@ public final class JabberBuilder extends Builder {
 	}
 
 	@Override
-	public boolean perform(final AbstractBuild<?, ?> build,
-			final Launcher launcher, final BuildListener listener)
-					throws InterruptedException, IOException {
+	public boolean perform(final AbstractBuild<?, ?> build, final Launcher launcher, final BuildListener listener)
+			throws InterruptedException, IOException {
 		try {
 			String m = "Building: " + build.getFullDisplayName();
 			String desc = build.getProject().getDescription();
@@ -120,8 +118,7 @@ public final class JabberBuilder extends Builder {
 					m += ((Cause) o).getShortDescription() + "\n\r";
 				}
 			}
-			if (build.getChangeSet() != null
-					&& build.getChangeSet().getItems() != null) {
+			if (build.getChangeSet() != null && build.getChangeSet().getItems() != null) {
 				for (Object o : build.getChangeSet().getItems()) {
 					m += o + "\n\r";
 				}
@@ -147,8 +144,7 @@ public final class JabberBuilder extends Builder {
 		 */
 		public JabberServer() {
 			LOG.log(Level.FINER, "Register the StopOnShutdown-Hook.");
-			Runtime.getRuntime().addShutdownHook(
-					new StopOnShutdown(this, "Stop Jabber/XMPP on Shutdown"));
+			Runtime.getRuntime().addShutdownHook(new StopOnShutdown(this, "Stop Jabber/XMPP on Shutdown"));
 		}
 
 		/**
@@ -184,25 +180,20 @@ public final class JabberBuilder extends Builder {
 		 *             If the Server stops meanwhile or some other
 		 *             undocumentated cases.
 		 */
-		public void broadcast(final String message)
-				throws NullPointerException {
+		public void broadcast(final String message) throws NullPointerException {
 			assert users != Collections.EMPTY_LIST;
 			if (server == null) {
-				throw new IllegalStateException(
-						"Server has not yet been started.",
-						new NullPointerException(
-								"The field 'server' is null."));
+				throw new IllegalStateException("Server has not yet been started.",
+						new NullPointerException("The field 'server' is null."));
 			}
-			ServerRuntimeContext serverRuntimeContext = server
-					.getServerRuntimeContext();
+			ServerRuntimeContext serverRuntimeContext = server.getServerRuntimeContext();
 			synchronized (users) {
 
 				for (EntityImpl recivient : users.values()) {
-					java.util.List<SessionContext> sessions = serverRuntimeContext
-							.getResourceRegistry().getSessions(recivient);
-					StanzaBuilder sb = StanzaBuilder.createMessageStanza(
-							recivient, recivient, MessageStanzaType.HEADLINE,
-							"html", message);
+					java.util.List<SessionContext> sessions = serverRuntimeContext.getResourceRegistry()
+							.getSessions(recivient);
+					StanzaBuilder sb = StanzaBuilder.createMessageStanza(recivient, recivient,
+							MessageStanzaType.HEADLINE, "html", message);
 
 					for (SessionContext sessionContext : sessions) {
 
@@ -211,8 +202,8 @@ public final class JabberBuilder extends Builder {
 						SessionState state = sessionContext.getState();
 						SessionStateHolder ssh = new SessionStateHolder();
 						ssh.setState(state);
-						serverRuntimeContext.getStanzaProcessor().processStanza(
-								serverRuntimeContext, sessionContext, s, ssh);
+						serverRuntimeContext.getStanzaProcessor().processStanza(serverRuntimeContext, sessionContext, s,
+								ssh);
 
 					}
 				}
@@ -259,13 +250,11 @@ public final class JabberBuilder extends Builder {
 		 * @throws Exception
 		 *             If some unexpected has been happend.
 		 */
-		public synchronized void start(final String certAbsoluteFilename,
-				final String certKey, final String hostname,
+		public synchronized void start(final String certAbsoluteFilename, final String certKey, final String hostname,
 				final String serverPort) throws Exception {
 			LOG.log(Level.FINER, "Start save Jabber settings.");
 			try {
-				startJabber(certAbsoluteFilename, certKey, hostname,
-						serverPort);
+				startJabber(certAbsoluteFilename, certKey, hostname, serverPort);
 			} catch (Exception e) {
 				server = null;
 				endpoint = null;
@@ -278,65 +267,53 @@ public final class JabberBuilder extends Builder {
 		/**
 		 * @see #start(String, String, String, String)
 		 */
-		private void startJabber(final String certAbsoluteFilename,
-				final String certKey, final String hostname,
+		private void startJabber(final String certAbsoluteFilename, final String certKey, final String hostname,
 				final String serverPort) throws Exception {
 
 			LOG.log(Level.FINER, "Create a stream to the certificate-file.");
-			FileInputStream fileInputStream = new FileInputStream(
-					certAbsoluteFilename);
+			FileInputStream fileInputStream = new FileInputStream(certAbsoluteFilename);
 			LOG.log(Level.FINER, "Start new identity storage.");
 			providerRegistry = new OpenStorageProviderRegistry();
 			LOG.log(Level.FINER, "Start new user authorization.");
 			jenkinsAuthroizationForJabber = new JenkinsJabberUserAuthorization();
 			if (users == Collections.EMPTY_MAP) {
-				LOG.log(Level.FINER,
-						"Old users collection not yet set, create new.");
+				LOG.log(Level.FINER, "Old users collection not yet set, create new.");
 				users = new HashMap<String, EntityImpl>();
 			} else {
-				LOG.log(Level.FINE, "Old users collection has already"
-						+ " been set, clear it now.");
+				LOG.log(Level.FINE, "Old users collection has already" + " been set, clear it now.");
 				users.clear();
 			}
 			// add users
 			LOG.log(Level.FINE, "Get userlist from jenkins-ci.");
 			People people = Jenkins.getInstance().getPeople();
-			LOG.log(Level.FINER,
-					"Will loop " + people.users.size() + " jenkins-ci's user.");
+			LOG.log(Level.FINER, "Will loop " + people.users.size() + " jenkins-ci's user.");
 			for (UserInfo userInfo : people.users) {
 				LOG.log(Level.FINER, "Create unique name for user " + userInfo);
 
-				JenkinsJabberEntityImpl jabberJenkinsUser = new JenkinsJabberEntityImpl(
-						users.keySet(), hostname, userInfo);
+				JenkinsJabberEntityImpl jabberJenkinsUser = new JenkinsJabberEntityImpl(users.keySet(), hostname,
+						userInfo);
 				LOG.log(Level.FINER,
-						"Unique name is: '" + jabberJenkinsUser.getUsername()
-								+ "', create new jabber-user ...");
+						"Unique name is: '" + jabberJenkinsUser.getUsername() + "', create new jabber-user ...");
 				LOG.log(Level.FINER,
-						"Jabber-user has been created:'" + jabberJenkinsUser
-								+ "', add it to the users collection.");
+						"Jabber-user has been created:'" + jabberJenkinsUser + "', add it to the users collection.");
 				users.put(jabberJenkinsUser.getUsername(), jabberJenkinsUser);
 				LOG.log(Level.FINER, "Add it to the user authorization.");
-				jenkinsAuthroizationForJabber.addUser(jabberJenkinsUser,
-						jabberJenkinsUser.getUsername());
+				jenkinsAuthroizationForJabber.addUser(jabberJenkinsUser, jabberJenkinsUser.getUsername());
 			}
-			LOG.log(Level.FINER, "Loop done, add the user "
-					+ "authroization to the jabber-registry.");
+			LOG.log(Level.FINER, "Loop done, add the user " + "authroization to the jabber-registry.");
 			providerRegistry.add(jenkinsAuthroizationForJabber);
 			LOG.log(Level.FINER, "Register the memory-roster.");
 			MemoryRosterManager memoryRosterManager = new MemoryRosterManager();
 			providerRegistry.add(memoryRosterManager);
-			LOG.log(Level.FINE, "Create the Jabber-Server using hostname: '"
-					+ hostname + "'.");
+			LOG.log(Level.FINE, "Create the Jabber-Server using hostname: '" + hostname + "'.");
 			server = new XMPPServer(hostname);
 			LOG.log(Level.FINER, "Create a TCP-Endpoint.");
 			endpoint = new TCPEndpoint();
-			LOG.log(Level.FINER,
-					"Set the endpoint's port to " + serverPort + ".");
+			LOG.log(Level.FINER, "Set the endpoint's port to " + serverPort + ".");
 			endpoint.setPort(Integer.parseInt(serverPort));
 			LOG.log(Level.FINER, "Add the endpoint to the Server.");
 			server.addEndpoint(endpoint);
-			LOG.log(Level.FINER,
-					"Register the certificate-stream to the Jabber-Server.");
+			LOG.log(Level.FINER, "Register the certificate-stream to the Jabber-Server.");
 			server.setTLSCertificateInfo(fileInputStream, certKey);
 			LOG.log(Level.FINE, "Handshake all users ...");
 			for (EntityImpl left : users.values()) {
@@ -345,8 +322,7 @@ public final class JabberBuilder extends Builder {
 					if (left != right) {
 						LOG.log(Level.FINER, "Take hand of " + right);
 
-						RosterItem d = new RosterItem(right,
-								SubscriptionType.BOTH);
+						RosterItem d = new RosterItem(right, SubscriptionType.BOTH);
 						LOG.log(Level.FINER, "Handshake!");
 						memoryRosterManager.addContact(left, d);
 					}
@@ -357,8 +333,7 @@ public final class JabberBuilder extends Builder {
 			LOG.log(Level.FINER, "Start the Jabber-Server.");
 			server.start();
 			LOG.log(Level.FINER, "Add module for receive Jenkins commands.");
-			server.addModule(new JenkinsConversationModule(
-					jenkinsAuthroizationForJabber));
+			server.addModule(new JenkinsConversationModule(jenkinsAuthroizationForJabber));
 			LOG.log(Level.FINER, "Add module for VCart-Fake.");
 			server.addModule(new JabberVCardModule(users));
 			LOG.log(Level.FINER, "Add module for Software-Version.");
@@ -388,59 +363,48 @@ public final class JabberBuilder extends Builder {
 		 *             Internal certificate mismatch, wrong password or
 		 *             out-dated.
 		 */
-		private void checkCertificate(final String certKey,
-				final String hostname, final FileInputStream fileInputStream)
-						throws KeyStoreException, IOException,
-						NoSuchAlgorithmException, CertificateException,
-						FormException {
+		private void checkCertificate(final String certKey, final String hostname,
+				final FileInputStream fileInputStream)
+				throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, FormException {
 			LOG.log(Level.FINER, "Initiate the keystore-instance.");
 			KeyStore s = KeyStore.getInstance(KeyStore.getDefaultType());
-			LOG.log(Level.FINE,
-					"Load the certificate using the certificate-password.");
+			LOG.log(Level.FINE, "Load the certificate using the certificate-password.");
 			try {
 				s.load(fileInputStream, certKey.toCharArray());
 			} catch (IOException e) {
 				if (e.getCause() instanceof UnrecoverableKeyException) {
-					throw new FormException("Password is wrong.",
-							"absoluteCertificateFilename");
+					throw new FormException("Password is wrong.", "absoluteCertificateFilename");
 				}
 				throw e;
 			}
-			LOG.log(Level.FINE,
-					"Get the certificate by the alias(" + hostname + ").");
+			LOG.log(Level.FINE, "Get the certificate by the alias(" + hostname + ").");
 
 			Certificate certificate = s.getCertificate(hostname);
 			X509Certificate cert = (X509Certificate) certificate;
 			if (certificate instanceof X509Certificate) {
 				LOG.log(Level.FINER, "Certificate is an X509Certificate.");
-				DateFormat dateFormat = SimpleDateFormat
-						.getDateInstance(DateFormat.MEDIUM);
+				DateFormat dateFormat = SimpleDateFormat.getDateInstance(DateFormat.MEDIUM);
 				Date now = new Date(System.currentTimeMillis());
 				if (cert.getNotAfter().before(now)) {
 					throw new FormException(
-							"Certificate out-of-date! Valid from "
-									+ dateFormat.format(cert.getNotBefore())
-									+ "-"
-									+ dateFormat.format(cert.getNotAfter())
-									+ "!",
+							"Certificate out-of-date! Valid from " + dateFormat.format(cert.getNotBefore()) + "-"
+									+ dateFormat.format(cert.getNotAfter()) + "!",
 							"absoluteCertificateFilename");
 				}
 				if (cert.getNotBefore().after(now)) {
-					throw new FormException("Certificate premature! Valid from "
-							+ dateFormat.format(cert.getNotBefore()) + "-"
-							+ dateFormat.format(cert.getNotAfter()) + "!",
+					throw new FormException(
+							"Certificate premature! Valid from " + dateFormat.format(cert.getNotBefore()) + "-"
+									+ dateFormat.format(cert.getNotAfter()) + "!",
 							"absoluteCertificateFilename");
 				}
 			} else {
 				if (certificate == null) {
-					throw new FormException(
-							"Alias is not found in the .jks or it is not a certificate!",
+					throw new FormException("Alias is not found in the .jks or it is not a certificate!",
 							"absoluteCertificateFilename");
 				} else {
 					PublicKey pk = certificate.getPublicKey();
 					throw new FormException(
-							"Key not supported: X509Certificate expected but .jks contains "
-									+ certificate + "!",
+							"Key not supported: X509Certificate expected but .jks contains " + certificate + "!",
 							"absoluteCertificateFilename");
 				}
 			}
@@ -450,16 +414,14 @@ public final class JabberBuilder extends Builder {
 		 * Stops the XMPP-Server.
 		 * 
 		 * @throws IllegalStateException
+		 *             If already stopped.
 		 */
 		public synchronized void stop() throws IllegalStateException {
 			if (endpoint == null) {
-				throw new IllegalStateException("Endpoint not been started.",
-						new NullPointerException());
+				throw new IllegalStateException("Endpoint not been started.", new NullPointerException());
 			}
 			if (server == null) {
-				throw new IllegalStateException(
-						"Server not been started, but Endpoint!?",
-						new NullPointerException());
+				throw new IllegalStateException("Server not been started, but Endpoint!?", new NullPointerException());
 			}
 			endpoint.stop();
 			endpoint = null;
@@ -486,8 +448,7 @@ public final class JabberBuilder extends Builder {
 	 * The Descriptor of the BuildStep.
 	 */
 	@Extension
-	public static final class DescriptorImpl
-			extends BuildStepDescriptor<Builder> {
+	public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 		/**
 		 * The ServerName to use as JID-Server-Part without Resource-Part.
 		 * 
@@ -526,9 +487,8 @@ public final class JabberBuilder extends Builder {
 					} catch (InterruptedException e1) {
 						e1.printStackTrace();
 					}
-					if (absoluteCertificateFilename != null
-							&& certificateKeyphrase != null
-							&& serverName != null && serverPort != null) {
+					if (absoluteCertificateFilename != null && certificateKeyphrase != null && serverName != null
+							&& serverPort != null) {
 						try {
 							JabberServer server = JabberServer.getServer();
 
@@ -536,9 +496,7 @@ public final class JabberBuilder extends Builder {
 								server.stop();
 							}
 
-							server.start(absoluteCertificateFilename,
-									certificateKeyphrase, serverName,
-									serverPort);
+							server.start(absoluteCertificateFilename, certificateKeyphrase, serverName, serverPort);
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
@@ -549,8 +507,7 @@ public final class JabberBuilder extends Builder {
 
 		@Override
 		@SuppressWarnings("rawtypes")
-		public boolean isApplicable(
-				final Class<? extends AbstractProject> aClass) {
+		public boolean isApplicable(final Class<? extends AbstractProject> aClass) {
 			return true;
 		}
 
@@ -560,28 +517,26 @@ public final class JabberBuilder extends Builder {
 		}
 
 		@Override
-		public boolean configure(final StaplerRequest req,
-				final JSONObject formData) throws FormException {
+		public boolean configure(final StaplerRequest req, final JSONObject formData) throws FormException {
 
 			save();
 			JabberServer server;
 			try {
 				configureFromForm(formData);
 				server = JabberServer.getServer();
-				FileInputStream fileInputStream = new FileInputStream(
-						absoluteCertificateFilename);
-				server.checkCertificate(certificateKeyphrase, serverName,
-						fileInputStream);
+				FileInputStream fileInputStream = new FileInputStream(absoluteCertificateFilename);
+				server.checkCertificate(certificateKeyphrase, serverName, fileInputStream);
 
 				if (server.isRunning()) {
 					server.stop();
 				}
 
-				server.start(absoluteCertificateFilename, certificateKeyphrase,
-						serverName, serverPort);
+				server.start(absoluteCertificateFilename, certificateKeyphrase, serverName, serverPort);
 			} catch (Exception e) {
-				if(e instanceof FileNotFoundException) { 
-					throw new FormException("Certificate not found for the jabber-server! If you have no certificate deactivate the Jabber Server plugin please.", "certificateKeyphrase");
+				if (e instanceof FileNotFoundException) {
+					throw new FormException(
+							"Certificate not found for the jabber-server! If you have no certificate deactivate the Jabber Server plugin please.",
+							"certificateKeyphrase");
 				}
 				throw new FormException("Jabber Server plugin reported: " + e.getMessage(), "certificateKeyphrase");
 			}
@@ -596,8 +551,7 @@ public final class JabberBuilder extends Builder {
 		 */
 		private void configureFromForm(final JSONObject formData) {
 			serverName = formData.getString("serverName");
-			absoluteCertificateFilename = formData
-					.getString("absoluteCertificateFilename");
+			absoluteCertificateFilename = formData.getString("absoluteCertificateFilename");
 			certificateKeyphrase = formData.getString("certificateKeyphrase");
 			serverPort = formData.getString("serverPort");
 		}
